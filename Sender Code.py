@@ -1,4 +1,5 @@
-# Bluetooth to Bluetooth Sender Code (requires a BLE device running Receiver Code)
+# Bluetooth to Bluetooth SENDER Code (requires a BLE device running RECEIVER Code)
+# Also assumes RECEIVER has a folder named drumSounds containing .wav files as listed in RECEIVER
 # Also note sender & receiver must also send / look for the same receiver_name,
 # which you'll find in the line below named.
 # Be sure to change to something unique & <11 chars in BOTH the sender & receiver code.py files.
@@ -26,14 +27,15 @@ button_B_input.switch_to_input(digitalio.Pull.DOWN)
 button_B = Button(button_B_input, value_when_pressed = True)
 
 # set up touchpads
-pad = [board.A1, board.A2, board.A3, board.A4, board.A5, board.A6, board.TX]
+pads = [board.A1, board.A2, board.A3, board.A4, board.A5, board.A6, board.TX]
 
 # create an empty list named touchpad_A1
 touchpad = []
 
 # loop through all elements of pad and create a TouchIn object, appending it to the touchpad list
-for i in range(len(pad)):
-    touchpad.append(touchio.TouchIn(pad[i]))
+for pad in pads:
+    touchin = touchio.TouchIn(pad)
+    touchpad.append(Button(touchin, value_when_pressed=True))
 
 bluefruit_buttons = [ButtonPacket.BUTTON_1, ButtonPacket.BUTTON_2, ButtonPacket.BUTTON_3,
         ButtonPacket.BUTTON_4, ButtonPacket.UP, ButtonPacket.DOWN,
@@ -83,21 +85,32 @@ while True:
         # Stop scanning whether or not we are connected.
         ble.stop_scan()  # And stop scanning.
     while uart_connection and uart_connection.connected:  # If connected...
-        touched = False # assume no buttons are touched
         for i in range(len(touchpad)): # Scan through all CPB touchpads
-            if touchpad[i].value: # if a pad is touched
+            touchpad[i].update() # gets Debounced state
+            if touchpad[i].pressed: # if a pad is touched
                 bluefruit_buttons[i]
-                print(f"Button {i} pressed!")
                 # then send the button corresponding to bluefruit_buttons for the pad pressed
                 # Note: This means we'll never send the 8th button, BUTTON.RIGHT,
                 # since there are only 7 touchpads on the CPB.
                 if not send_packet(uart_connection,
-                                   ButtonPacket(bluefruit_buttons[i], pressed=True)):
-                    touched = True
+                                  ButtonPacket(bluefruit_buttons[i], pressed=True)):
+                   pass
+                print(f"Button {i} pressed!")
+
+        for i in range(len(touchpad)): # Scan through all CPB touchpads
+            if touchpad[i].released: # if a pad is touched
+                if not send_packet(uart_connection, ColorPacket((0, 0, 0))):
+                    continue
+                print(f"Button {i} RELEASED!")
+
         button_A.update()
         button_B.update() # VERY important to call .update() on EACH button before checking state
         if button_A.pressed: # if button is pressed
             print("button A pressed")
+            if not send_packet(uart_connection,
+                              ButtonPacket(bluefruit_buttons[len(bluefruit_buttons)-1], pressed=True)):
+               pass
+        elif button_A.released:
             if not send_packet(uart_connection, ColorPacket((0, 0, 0))):
                 continue
         elif button_B.pressed:

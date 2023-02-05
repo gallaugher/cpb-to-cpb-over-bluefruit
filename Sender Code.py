@@ -54,6 +54,7 @@ button_B_input = digitalio.DigitalInOut(board.BUTTON_B)
 button_B_input.switch_to_input(digitalio.Pull.DOWN)
 button_B = Button(button_B_input, value_when_pressed = True)
 
+
 # Set up 7 CPB touchpads to act as an array of debounced buttons
 # set up touchpads
 pads = [board.A1, board.A2, board.A3, board.A4, board.A5, board.A6, board.TX]
@@ -72,6 +73,7 @@ bluefruit_buttons = [ButtonPacket.BUTTON_1, ButtonPacket.BUTTON_2, ButtonPacket.
         ButtonPacket.BUTTON_4, ButtonPacket.UP, ButtonPacket.DOWN,
         ButtonPacket.LEFT, ButtonPacket.RIGHT]
 
+
 while True:
     if not uart_connection or not uart_connection.connected:  # If not connected...
         print("Scanning...")
@@ -83,7 +85,7 @@ while True:
                     break # MUST include this here or code will never continue after connection.
         # Stop scanning whether or not we are connected.
         ble.stop_scan()  # And stop scanning.
-        
+
     while uart_connection and uart_connection.connected:  # If connected...
         for i in range(len(touchpad)): # Scan through all CPB touchpads
             touchpad[i].update() # gets Debounced state
@@ -120,7 +122,6 @@ while True:
         elif button_B.pressed:
             print("button B pressed")
             user_input = input("Enter text to send: ")+"\r\n"
-            # uart_connection[UARTService].write(user_input.encode())
             if not send_packet(uart_connection, user_input):
                 uart_connection = None
                 continue

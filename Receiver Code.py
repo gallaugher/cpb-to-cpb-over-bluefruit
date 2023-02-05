@@ -1,8 +1,16 @@
 # RECEIVER CODE
-# e.g. code on CPB wired to the sign
+# Make sure there is a device set up as a SENDER that is connecting to the same
+# advertisement.complete_name = "profg-r" name that you see below.
+# This code will receive messages from touchpads on the SENDER CPB
+# The pad order 1, 2, 3, 4, 5, 6, TX - send the first 7 buttons listed
+# in the button list below: bluefruit_buttons
+# Button_A on the SENDER CPB will send the 8th button ButtonPacket.RIGHT
+# When any of the pads or Button_A are released, the lights turn off.
+# Pressing Button_B on the SENDER CPB will allow the user to input text in the serial console
+# and press return to send it. The text sent will print in the serial console of the RECEIVER
+# if it is running in Mu & the serial console is open.
 
-import board
-import neopixel
+import board, neopixel, digitalio
 
 from adafruit_ble import BLERadio
 from adafruit_ble.advertising.standard import ProvideServicesAdvertisement
@@ -12,6 +20,29 @@ from adafruit_bluefruit_connect.packet import Packet
 from adafruit_bluefruit_connect.color_packet import ColorPacket
 from adafruit_bluefruit_connect.button_packet import ButtonPacket
 from adafruit_bluefruit_connect.raw_text_packet import RawTextPacket
+
+# import lines needed to play sound files
+from audiopwmio import PWMAudioOut as AudioOut
+from audiocore import WaveFile
+
+# set up the speaker
+speaker = digitalio.DigitalInOut(board.SPEAKER_ENABLE)
+speaker.direction = digitalio.Direction.OUTPUT
+speaker.value = True
+audio = AudioOut(board.SPEAKER)
+
+# set path where sound files can be found
+path = "drumSounds/"
+
+# set up a list for my drum_sounds
+drum_sounds = ["bass_hit_c.wav",
+                "bd_tek.wav",
+                "bd_zome.wav",
+                "drum_cowbell.wav",
+                "elec_cymbal.wav",
+                "elec_hi_snare.wav",
+                "scratch.wav",
+                "splat.wav"]
 
 RED = (255, 0, 0)
 MAGENTA = (255, 0, 20)
@@ -41,6 +72,16 @@ advertisement = ProvideServicesAdvertisement(uart)
 # VERY IMPORTANT - must be < 11 characters!
 advertisement.complete_name = "profg-r"
 
+ble_radio = BLERadio()
+ble_radio.name = advertisement.complete_name
+
+def play_sound(filename):
+    with open(path + filename, "rb") as wave_file:
+        wave = WaveFile(wave_file)
+        audio.play(wave)
+        while audio.playing:
+            pass
+
 while True:
     ble.start_advertising(advertisement)  # Start advertising.
     print(f"Adveriting name as: {advertisement.complete_name}")
@@ -62,6 +103,7 @@ while True:
                             if packet.button == bluefruit_buttons[i]:
                                 print(f"Button Pressed: {i}")
                                 pixels.fill(colors[i])
+                                play_sound(drum_sounds[i])
                 elif isinstance(packet, RawTextPacket):
                     print(f"Message Received: {packet.text.decode().strip()}")
                 elif isinstance(packet, ColorPacket):

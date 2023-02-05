@@ -90,7 +90,6 @@ while True:
         for i in range(len(touchpad)): # Scan through all CPB touchpads
             touchpad[i].update() # gets Debounced state
             if touchpad[i].pressed: # if a pad is touched
-                bluefruit_buttons[i]
                 # then send the button corresponding to bluefruit_buttons for the pad pressed
                 # Note: This means we'll never send the 8th button, BUTTON.RIGHT,
                 # since there are only 7 touchpads on the CPB. RIGHT is sent by button_A, below

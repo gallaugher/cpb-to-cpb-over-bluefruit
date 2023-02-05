@@ -32,11 +32,14 @@ def send_packet(uart_connection_name, packet):
         uart_connection_name[UARTService].write(packet.to_bytes())
     except:  # pylint: disable=bare-except
         try:
-            uart_connection_name.disconnect()
+            uart_connection[UARTService].write(packet)
         except:  # pylint: disable=bare-except
-            pass
-        print("No longer connected")
-        return False
+            try:
+                uart_connection_name.disconnect()
+            except:  # pylint: disable=bare-except
+                pass
+            print("No longer connected")
+            return False
     return True
 
 # === END OF BLUETOOTH SETUP CODE & FUNCTIONS ===
@@ -117,7 +120,8 @@ while True:
         elif button_B.pressed:
             print("button B pressed")
             user_input = input("Enter text to send: ")+"\r\n"
-            if not send_packet(uart_connection, user_input.encode()):
+            # uart_connection[UARTService].write(user_input.encode())
+            if not send_packet(uart_connection, user_input):
                 uart_connection = None
                 continue
             print(f"Just sent message {user_input}")

@@ -5,47 +5,26 @@
 # Be sure to change to something unique & <11 chars in BOTH the sender & receiver code.py files.
 # receiver_name = "profg-r"
 
-import board, time, touchio, digitalio, neopixel, touchio
+import board, time, touchio, digitalio, touchio
 from adafruit_debouncer import Button
+
+# ================================
+# BLUETOOTH SETUP CODE & FUNCTIONS
+# ================================
 
 from adafruit_ble import BLERadio
 from adafruit_ble.advertising.standard import ProvideServicesAdvertisement
 from adafruit_ble.services.nordic import UARTService
-from adafruit_bluefruit_connect.color_packet import ColorPacket
 from adafruit_bluefruit_connect.button_packet import ButtonPacket
+from adafruit_bluefruit_connect.color_packet import ColorPacket
 from adafruit_bluefruit_connect.raw_text_packet import RawTextPacket
 
-from adafruit_bluefruit_connect.raw_text_packet import Packet
-
-# Set up CPB built-in Buttons A & B
-button_A_input = digitalio.DigitalInOut(board.BUTTON_A)
-button_A_input.switch_to_input(digitalio.Pull.DOWN) # Note: Pull.UP for external buttons
-button_A = Button(button_A_input, value_when_pressed = True) # NOTE: value_when_pressed = default False for external buttons
-
-button_B_input = digitalio.DigitalInOut(board.BUTTON_B)
-button_B_input.switch_to_input(digitalio.Pull.DOWN)
-button_B = Button(button_B_input, value_when_pressed = True)
-
-# set up touchpads
-pads = [board.A1, board.A2, board.A3, board.A4, board.A5, board.A6, board.TX]
-
-# create an empty list named touchpad_A1
-touchpad = []
-
-# loop through all elements of pad and create a TouchIn object, appending it to the touchpad list
-for pad in pads:
-    touchin = touchio.TouchIn(pad)
-    touchpad.append(Button(touchin, value_when_pressed=True))
-
-bluefruit_buttons = [ButtonPacket.BUTTON_1, ButtonPacket.BUTTON_2, ButtonPacket.BUTTON_3,
-        ButtonPacket.BUTTON_4, ButtonPacket.UP, ButtonPacket.DOWN,
-        ButtonPacket.LEFT, ButtonPacket.RIGHT]
-
 # name of device this remote is seeking:
+# IMPORTANT: Choose a name 11 characters or LESS or your code WILL NOT WORK!
 receiver_name = "profg-r"
 
-# Empty out button selection
-button_selection = ""
+ble = BLERadio()
+uart_connection = None
 
 def send_packet(uart_connection_name, packet):
     """Returns False if no longer connected."""
@@ -59,22 +38,37 @@ def send_packet(uart_connection_name, packet):
         print("No longer connected")
         return False
     return True
+    
 
-ble = BLERadio()
-uart_server = UARTService()
-advertisement = ProvideServicesAdvertisement(uart_server)
-# Give your CPB a unique name between the quotes below
-advertisement.complete_name = "profg-sender"
+# BUTTON SETUP - Set up CPB built-in Buttons A & B
+button_A_input = digitalio.DigitalInOut(board.BUTTON_A)
+button_A_input.switch_to_input(digitalio.Pull.DOWN) # Note: Pull.UP for external buttons
+button_A = Button(button_A_input, value_when_pressed = True) # NOTE: value_when_pressed = default False for external buttons
 
-uart_connection = None
-# See if any existing connections are providing UARTService.
-if ble.connected:
-    for connection in ble.connections:
-        if UARTService in connection:
-            uart_connection = connection
-        break
+button_B_input = digitalio.DigitalInOut(board.BUTTON_B)
+button_B_input.switch_to_input(digitalio.Pull.DOWN)
+button_B = Button(button_B_input, value_when_pressed = True)
+
+
+# TOUCHPAD SETUP
+# set up touchpads
+pads = [board.A1, board.A2, board.A3, board.A4, board.A5, board.A6, board.TX]
+# create an empty list named touchpad_A1
+touchpad = []
+# loop through all elements of pad and create a TouchIn object, appending it to the touchpad list
+for pad in pads:
+    touchin = touchio.TouchIn(pad)
+    touchpad.append(Button(touchin, value_when_pressed=True))
+
+ 
+# ARRAY to keep track of 8 buttons from the Bluefruit Connect app, that we will simulate 
+bluefruit_buttons = [ButtonPacket.BUTTON_1, ButtonPacket.BUTTON_2, ButtonPacket.BUTTON_3,
+        ButtonPacket.BUTTON_4, ButtonPacket.UP, ButtonPacket.DOWN,
+        ButtonPacket.LEFT, ButtonPacket.RIGHT]
+
 
 while True:
+    # if not connected, keep scanning for the receiver_name we're searching for until we connect to it.
     if not uart_connection or not uart_connection.connected:  # If not connected...
         print("Scanning...")
         for adv in ble.start_scan(ProvideServicesAdvertisement, timeout=5):  # Scan...
@@ -84,6 +78,8 @@ while True:
                     break # MUST include this here or code will never continue after connection.
         # Stop scanning whether or not we are connected.
         ble.stop_scan()  # And stop scanning.
+        
+    # if we are connected, then check for inputs on the sender device & send the appropriate message over Bluetooth.
     while uart_connection and uart_connection.connected:  # If connected...
         for i in range(len(touchpad)): # Scan through all CPB touchpads
             touchpad[i].update() # gets Debounced state
@@ -91,15 +87,18 @@ while True:
                 bluefruit_buttons[i]
                 # then send the button corresponding to bluefruit_buttons for the pad pressed
                 # Note: This means we'll never send the 8th button, BUTTON.RIGHT,
-                # since there are only 7 touchpads on the CPB.
+                # since there are only 7 touchpads on the CPB, but we send BUTTON.RIGHT 
+                # with Button_A, later in the code.
                 if not send_packet(uart_connection,
                                   ButtonPacket(bluefruit_buttons[i], pressed=True)):
-                   pass
+                   uart_connection = None
+                   continue
                 print(f"Button {i} pressed!")
 
         for i in range(len(touchpad)): # Scan through all CPB touchpads
             if touchpad[i].released: # if a pad is touched
                 if not send_packet(uart_connection, ColorPacket((0, 0, 0))):
+                    uart_connection = None
                     continue
                 print(f"Button {i} RELEASED!")
 
@@ -109,12 +108,16 @@ while True:
             print("button A pressed")
             if not send_packet(uart_connection,
                               ButtonPacket(bluefruit_buttons[len(bluefruit_buttons)-1], pressed=True)):
-               pass
+                uart_connection = None
+                continue
         elif button_A.released:
             if not send_packet(uart_connection, ColorPacket((0, 0, 0))):
+                uart_connection = None
                 continue
         elif button_B.pressed:
             print("button B pressed")
             user_input = input("Enter text to send: ")+"\r\n"
-            uart_connection[UARTService].write(user_input.encode())
+            if not send_packet(uart_connection, user_input.encode()):
+                uart_connection = None
+                continue
             print(f"Just sent message {user_input}")

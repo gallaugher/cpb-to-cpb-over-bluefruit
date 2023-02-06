@@ -105,12 +105,13 @@ bluefruit_buttons = [ButtonPacket.BUTTON_1, ButtonPacket.BUTTON_2, ButtonPacket.
 
 while True:
     ble.start_advertising(advertisement)  # Start advertising.
-    print(f"Adveriting name as: {advertisement.complete_name}")
+    print(f"Advertising as: {advertisement.complete_name}")
     was_connected = False
     while not was_connected or ble.connected:
         if ble.connected:  # If BLE is connected...
             was_connected = True
-            if uart.in_waiting:  # Check to see if any data is available from the Remote Control.
+
+            if uart.in_waiting:  # Check to see if any new data has been sent from the SENDER.
                 try:
                     packet = Packet.from_stream(uart)  # Create the packet object.
                 except ValueError:
@@ -125,9 +126,10 @@ while True:
                                 print(f"Button Pressed: {i}")
                                 pixels.fill(colors[i])
                                 play_sound(drum_sounds[i])
-                elif isinstance(packet, RawTextPacket):
-                    print(f"Message Received: {packet.text.decode().strip()}")
                 elif isinstance(packet, ColorPacket):
                     pixels.fill(packet.color)
+                elif isinstance(packet, RawTextPacket):
+                    print(f"Message Received: {packet.text.decode().strip()}")
+
     # If we got here, we lost the connection. Go up to the top and start
     # advertising again and waiting for a connection.

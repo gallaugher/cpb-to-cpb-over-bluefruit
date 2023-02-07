@@ -1,7 +1,7 @@
 # RECEIVER CODE
 # Make sure there is a device set up as a SENDER that is connecting to the same
 # advertisement.complete_name that you see below. This example has
-# advertisement.complete_name = "profg-r" but you should change that to whatever 
+# advertisement.complete_name = "profg-r" but you should change that to whatever
 # you set your receiver_name equal to in the code.py file on your SENDER CPB.
 # This code will receive messages from touchpads on the SENDER CPB
 # Pressing a CPB touchpad: 1, 2, 3, 4, 5, 6, or TX - will send  a similarly indexed
@@ -57,7 +57,7 @@ audio = AudioOut(board.SPEAKER)
 # set path where sound files can be found
 path = "drumSounds/"
 
-# to play a sound, call the play_sound function & pass in a 
+# to play a sound, call the play_sound function & pass in a
 # filename as a string. Be sure to include the extension, e.g. "splat.wav")
 def play_sound(filename):
     with open(path + filename, "rb") as wave_file:
@@ -75,6 +75,7 @@ drum_sounds = ["bass_hit_c.wav",
                 "elec_hi_snare.wav",
                 "scratch.wav",
                 "splat.wav"]
+
 
 # SET UP THE 10 NEOPIXELS ON THE CPB. NAME THEM PIXELS
 pixels = neopixel.NeoPixel(board.NEOPIXEL, 10)
@@ -94,7 +95,7 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
 # CREATE AN ARRAY OF THESE COLORS
-colors = [RED, MAGENTA, ORANGE, YELLOW, GREEN, JADE, BLUE, INDIGO, VIOLET, PURPLE, BLACK]
+colors = [RED, MAGENTA, ORANGE, YELLOW, GREEN, JADE, BLUE, INDIGO, VIOLET, PURPLE, WHITE, BLACK]
 
 
 # These are the ButtonPacket codes that are the same as the 8 buttons on the Bluefruit App
@@ -105,8 +106,9 @@ bluefruit_buttons = [ButtonPacket.BUTTON_1, ButtonPacket.BUTTON_2, ButtonPacket.
 
 while True:
     ble.start_advertising(advertisement)  # Start advertising.
-    print(f"Advertising as: {advertisement.complete_name}")
+    print(f"Advertising as: {advertisement.complete_name}") # Name prints once each time the board isn't connected
     was_connected = False
+
     while not was_connected or ble.connected:
         if ble.connected:  # If BLE is connected...
             was_connected = True

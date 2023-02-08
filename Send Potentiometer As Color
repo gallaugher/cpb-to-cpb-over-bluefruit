@@ -111,7 +111,7 @@ while True:
             touchpad[i].update() # gets Debounced state
             
             # READ POTENTIOMETER & SEND VALUE AS A COLOR PACKET
-            scaled_pot_value = int((potentiometer.value * 255) / 65520)
+            scaled_pot_value = int((potentiometer.value * 255) / 65535)
             color_int = colorwheel(scaled_pot_value)
             rgb_color = color_int.to_bytes(3, "big")
             print(f"potentiometer.value = {potentiometer.value}, color_int = {color_int}, rgb_color = {rgb_color}")

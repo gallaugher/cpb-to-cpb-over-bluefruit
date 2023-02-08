@@ -14,3 +14,5 @@ Button B will prompt user to enter text which is sent to Receiver & will be disp
 Be sure to drag the drumSounds folder onto the RECEIVER CPB.
 
 Want to send a potentiomter value as a color? The file "Send Potentiometer As Color" shows how you can do this by hooking a potentiometer to board.A1 on a CPB. Nothing in the Reciever Code file would need to be changed. More information in the comments of the "Send Potentiometer As Color" file.
+
+Want to send a potentiometer value as a servo angle from 0 to 180? The file "Send Potentiometer As servo angle 0 to 180" shows how you can do this by hooking a potentiometer to board.A1 on a CPB. Nothing in the Reciever Code file will need to be the "Receiver Controlling Servo". More information in the comments at the top of these two files.

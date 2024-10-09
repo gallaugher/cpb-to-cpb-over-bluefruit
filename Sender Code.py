@@ -73,7 +73,7 @@ bluefruit_buttons = [ButtonPacket.BUTTON_1, ButtonPacket.BUTTON_2, ButtonPacket.
         ButtonPacket.BUTTON_4, ButtonPacket.UP, ButtonPacket.DOWN,
         ButtonPacket.LEFT, ButtonPacket.RIGHT]
 
-
+print("Running Sender Code!") 
 while True:
     if not uart_connection or not uart_connection.connected:  # If not connected...
         print("Scanning...")

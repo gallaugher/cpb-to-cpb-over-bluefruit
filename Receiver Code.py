@@ -103,7 +103,7 @@ bluefruit_buttons = [ButtonPacket.BUTTON_1, ButtonPacket.BUTTON_2, ButtonPacket.
             ButtonPacket.BUTTON_4, ButtonPacket.UP, ButtonPacket.DOWN,
             ButtonPacket.LEFT, ButtonPacket.RIGHT]
 
-
+print("Running Receiver Code!") 
 while True:
     ble.start_advertising(advertisement)  # Start advertising.
     print(f"Advertising as: {advertisement.complete_name}") # Name prints once each time the board isn't connected
